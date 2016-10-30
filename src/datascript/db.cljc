@@ -1065,9 +1065,9 @@
                     (let [ff (:v (first (-search db [fe :db/dbfn])))]
                       (if (fn? ff)
                         (recur report (concat (apply ff db args) entities))
-                        (raise ":db.dbfn/call failed because " dbfn-name " does not correspond, via the :dbfn attribute, to a function"
+                        (raise ":db.dbfn/call failed because " dbfn-name " does not correspond, via the :db/dbfn attribute, to a function"
                                {:error :transact/dbfn, :dbfn-name dbfn-name, :entity-id fe, :dbfn-value ff})))
-                    (raise ":db.dbfn/call failed to find a :dbfn-name value for " dbfn-name ", ensure `:db/dbfn-name { :db/unique :db.unique/identity }` is included in the schema"
+                    (raise ":db.dbfn/call failed to find a :db/dbfn-name value for " dbfn-name ", ensure `:db/dbfn-name { :db/unique :db.unique/identity }` is included in the schema"
                            {:error :transact/dbfn, :dbfn-name dbfn-name})))
 
               (= op :db.fn/cas)
