@@ -190,8 +190,8 @@
       (is (= (:age e) 32))
       (is (:had-birthday e)))))
 
-(deftest test-dbfn-fn
-  (let [conn (d/create-conn {:aka { :db/cardinality :db.cardinality/many } :db/dbfn-name { :db/unique :db.unique/identity}})
+(deftest test-db-ident-fn
+  (let [conn (d/create-conn {:aka { :db/cardinality :db.cardinality/many } :db/ident { :db/unique :db.unique/identity}})
         inc-age (fn [db name]
                   (if-let [[eid age] (first (d/q '{:find [?e ?age]
                                                    :in [$ ?name]
@@ -204,7 +204,7 @@
     (d/transact! conn [[:db/add 1 :name "Petr"]])
     (d/transact! conn [[:db/add 1 :aka  "Devil"]])
     (d/transact! conn [[:db/add 1 :aka  "Tupen"]])
-    (d/transact! conn [{:db/dbfn-name :inc-age :db/dbfn inc-age}])
+    (d/transact! conn [{:db/ident :inc-age :db/fn inc-age}])
     (is (= (d/q '[:find ?v ?a
                   :where [?e :name ?v]
                          [?e :age ?a]] @conn)
@@ -213,8 +213,8 @@
                   :where [?e :aka ?v]] @conn)
            #{["Devil"] ["Tupen"]}))
     (is (thrown-with-msg? Throwable #"No entity with name: Bob"
-                          (d/transact! conn [[:db.dbfn/call :inc-age "Bob"]])))
-    (let [{:keys [db-after]} (d/transact! conn [[:db.dbfn/call :inc-age "Petr"]])
+                          (d/transact! conn [[:inc-age "Bob"]])))
+    (let [{:keys [db-after]} (d/transact! conn [[:inc-age "Petr"]])
           e (d/entity db-after 1)]
       (is (= (:age e) 32))
       (is (:had-birthday e)))))
