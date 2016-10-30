@@ -1059,6 +1059,17 @@
                 (let [[_ f & args] entity]
                   (recur report (concat (apply f db args) entities)))
 
+              (= op :db.dbfn/call)
+                (let [[_ dbfn-name & args] entity]
+                  (if-let [fe (:e (first (-datoms db :avet [:db/dbfn-name dbfn-name])))]
+                    (let [ff (:v (first (-search db [fe :db/dbfn])))]
+                      (if (fn? ff)
+                        (recur report (concat (apply ff db args) entities))
+                        (raise ":db.dbfn/call failed because " dbfn-name " does not correspond, via the :dbfn attribute, to a function"
+                               {:error :transact/dbfn, :dbfn-name dbfn-name, :entity-id fe, :dbfn-value ff})))
+                    (raise ":db.dbfn/call failed to find a :dbfn-name value for " dbfn-name ", ensure `:db/dbfn-name { :db/unique :db.unique/identity }` is included in the schema"
+                           {:error :transact/dbfn, :dbfn-name dbfn-name})))
+
               (= op :db.fn/cas)
                 (let [[_ e a ov nv] entity
                       e (entid-strict db e)
@@ -1132,7 +1143,7 @@
                   (recur report entities))
 
              :else
-               (raise "Unknown operation at " entity ", expected :db/add, :db/retract, :db.fn/call, :db.fn/retractAttribute or :db.fn/retractEntity"
+               (raise "Unknown operation at " entity ", expected :db/add, :db/retract, :db.fn/call,  :db.dbfn/call, :db.fn/retractAttribute or :db.fn/retractEntity"
                       {:error :transact/syntax, :operation op, :tx-data entity})))
        
        (datom? entity)
