@@ -1131,16 +1131,14 @@
                            (concat (retract-components db e-datoms) entities)))
                   (recur report entities))
 
-              (let [[ident & args] entity]
-                (if-let [fe (:e (first (-datoms db :avet [:db/ident ident])))]
-                  (fn? (:v (first (-search db [fe :db/fn]))))))
-                (let [[ident & args] entity
-                      f (:v (first (-search db [(:e (first (-datoms db :avet [:db/ident ident]))) :db/fn])))]
-                  (recur report (concat (apply f db args) entities)))
-
              :else
-               (raise "Unknown operation at " entity ", expected :db/add, :db/retract, :db.fn/call, :db.fn/retractAttribute, :db.fn/retractEntity or an ident corresponding to an installed transaction function (e.g. {:db/ident <keyword> :db/fn <Ifn>}, usage of :db/ident requires {:db/unique :db.unique/identity} in schema)"
-                      {:error :transact/syntax, :operation op, :tx-data entity})))
+              (let [[ident & args] entity]
+                (let [{e :e v :v} (first (-datoms db :avet [:db/ident ident]))
+                      f (:v (first (-search db [e :db/fn])))]
+                  (if (and (= v ident) (fn? f))
+                    (recur report (concat (apply f db args) entities))
+                    (raise "Unknown operation at " entity ", expected :db/add, :db/retract, :db.fn/call, :db.fn/retractAttribute, :db.fn/retractEntity or an ident corresponding to an installed transaction function (e.g. {:db/ident <keyword> :db/fn <Ifn>}, usage of :db/ident requires {:db/unique :db.unique/identity} in schema)"
+                           {:error :transact/syntax, :operation op, :tx-data entity}))))))
        
        (datom? entity)
          (let [[e a v tx added] entity]
